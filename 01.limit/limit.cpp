@@ -2,15 +2,12 @@
 #include <cmath>
 #include <vector>
 
+//example: limit x mendekati 1 dari
+//f(x) = (x^3 - 1) / (x-1)
+
 double f(double x)
 {
-    // f(x) = (x^3 - 1) / (x - 1)
-    // Secara analitis, limit saat x -> 1 adalah 3
-    if (std::abs(x - 1.0) < 1e-15)
-    {
-        // Hindari pembagian dengan nol
-        return 3.0; // Nilai limit sebenarnya
-    }
+    // f(x) = (x^3 - 1) / (x-1)
     return (std::pow(x, 3) - 1) / (x - 1);
 }
 
