@@ -8,7 +8,6 @@ double limit(double (*f)(double), double a, double e = 1e-12)
 
     std::vector<double> x_kiri, x_kanan;
 
-    fmt::print("=== LIMIT: f(x) = (x³ - 1)/(x - 1) ===\n");
     fmt::print("Menghitung lim(x→{}) f(x)\n\n", a);
 
     // Pendekatan dari Kiri (Zeno's approach)
