@@ -65,8 +65,6 @@ double limit(double (*f)(double), double a, double e = 1e-12)
         double avg_limit = (limit_kiri + limit_kanan) / 2.0;
         fmt::print("\nLIMIT DITEMUKAN!\n");
         fmt::print("lim(x→{}) f(x) = {:.12f}\n", a, avg_limit);
-        fmt::print("Nilai eksak    = 3.000000000000\n");
-        fmt::print("Error          = {:.2e}\n", std::abs(avg_limit - 3.0));
         return avg_limit;
     }
     else
@@ -79,7 +77,6 @@ double limit(double (*f)(double), double a, double e = 1e-12)
 
 double f(double x)
 {
-    // f(x) = (x^3 - 1) / (x-1)
     return (std::pow(x, 2) - 4) / (x - 2);
 }
 
