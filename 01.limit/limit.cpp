@@ -79,7 +79,7 @@ int main()
     fmt::print("Selisih          : {:.2e}\n", diff);
 
     if (diff < 1e-3)
-    { // Threshold lebih realistis untuk error numerik
+    {
         double avg_limit = (limit_kiri + limit_kanan) / 2.0;
         fmt::print("\nLIMIT DITEMUKAN!\n");
         fmt::print("lim(x→{}) f(x) = {:.12f}\n", a, avg_limit);
