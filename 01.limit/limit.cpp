@@ -27,7 +27,7 @@ double limit(double (*f)(double), double a, double e = 1e-12)
     }
 
     // Output Pendekatan dari Kiri
-    fmt::print("📍 PENDEKATAN DARI KIRI (x < {})\n", a);
+    fmt::print("PENDEKATAN DARI KIRI (x < {})\n", a);
     fmt::print("{:<5} | {:<18} | {:<18}\n", "Step", "x", "f(x)");
     fmt::print("{:-<48}\n", "");
 
@@ -85,3 +85,4 @@ int main()
     limit(f, 2);
     return 0;
 }
+
