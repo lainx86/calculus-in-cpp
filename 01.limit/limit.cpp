@@ -1,88 +1,158 @@
-#include <fmt/core.h>
+#include <print>
 #include <cmath>
 #include <vector>
 
-double limit(double (*f)(double), double a, double e = 1e-12)
-{
-    double limit_kiri, limit_kanan;
+constexpr double EPSILON = 1e-12;
+constexpr double OFFSET = 1.0;
+constexpr size_t MAX_ITERATIONS = 25;
+constexpr double CONVERGENCE_TOL = 1e-5;
 
-    std::vector<double> x_kiri, x_kanan;
+// Class to store numerical limit evaluation results
+class LimitResult {
+private:
+    bool exists_;
+    double value_;
+    double left_limit_;
+    double right_limit_;
+    double difference_;
+    std::vector<double> left_sequence_;
+    std::vector<double> right_sequence_;
+    double (*func_)(double);
+    double point_;
 
-    fmt::print("Menghitung lim(x→{}) f(x)\n\n", a);
-
-    // Pendekatan dari Kiri (Zeno's approach)
-    double current = a - 5.0; // Mulai dari agak jauh
-    while (std::abs(a - current) > e && x_kiri.size() < 25)
+public:
+    LimitResult(double (*f)(double), double a, double epsilon = EPSILON)
+        : func_(f), point_(a)
     {
-        x_kiri.push_back(current);
-        current += (a - current) * 0.5; // Lompat setengah jarak terus menerus
+        // Construct sequence approaching a from the left (x → a⁻)
+        double current = a - OFFSET;
+        while (std::abs(a - current) > epsilon && left_sequence_.size() < MAX_ITERATIONS) {
+            left_sequence_.push_back(current);
+            current += (a - current) * 0.5;
+        }
+        
+        // Construct sequence approaching a from the right (x → a⁺)
+        current = a + OFFSET;
+        while (std::abs(current - a) > epsilon && right_sequence_.size() < MAX_ITERATIONS) {
+            right_sequence_.push_back(current);
+            current -= (current - a) * 0.5;
+        }
+        
+        // Evaluate one-sided limits numerically
+        left_limit_  = !left_sequence_.empty()  ? f(left_sequence_.back())  : NAN;
+        right_limit_ = !right_sequence_.empty() ? f(right_sequence_.back()) : NAN;
+        
+        // Limit existence verification
+        if (!std::isfinite(left_limit_) || !std::isfinite(right_limit_)) {
+            exists_ = false;
+            value_ = NAN;
+            difference_ = NAN;
+            return;
+        }
+        
+        difference_ = std::abs(left_limit_ - right_limit_);
+        exists_ = (difference_ < CONVERGENCE_TOL);
+        value_ = exists_ ? (left_limit_ + right_limit_) / 2.0 : NAN;
+        return;
     }
-
-    // Pendekatan dari Kanan
-    current = a + 5.0;
-    while (std::abs(current - a) > e && x_kanan.size() < 25)
-    {
-        x_kanan.push_back(current);
-        current -= (current - a) * 0.5;
+    
+    // Display numerical limit evaluation procedure
+    void display_calculation() const {
+        std::print("Evaluating  lim(x → {}) f(x)\n", point_);
+        
+        // Left-hand limit table
+        std::print("\nLEFT-HAND APPROACH  (x → {}⁻)\n", point_);
+        std::print("{:<5} | {:<18} | {:<18}\n", "Step", "x", "f(x)");
+        std::print("{:-<48}\n", "");
+        for (size_t i = 0; i < left_sequence_.size(); ++i) {
+            double x = left_sequence_[i];
+            double fx = func_(x);
+            if (std::isfinite(fx)) {
+                std::print("{:<5} | {:>16.12f} | {:>16.12f}\n", i + 1, x, fx);
+            } else {
+                std::print("{:<5} | {:>16.12f} | {:>18}\n", i + 1, x, "undefined");
+            }
+        }
+        
+        // Right-hand limit table
+        std::print("\nRIGHT-HAND APPROACH (x → {}⁺)\n", point_);
+        std::print("{:<5} | {:<18} | {:<18}\n", "Step", "x", "f(x)");
+        std::print("{:-<48}\n", "");
+        for (size_t i = 0; i < right_sequence_.size(); ++i) {
+            double x = right_sequence_[i];
+            double fx = func_(x);
+            if (std::isfinite(fx)) {
+                std::print("{:<5} | {:>16.12f} | {:>16.12f}\n", i + 1, x, fx);
+            } else {
+                std::print("{:<5} | {:>16.12f} | {:>18}\n", i + 1, x, "undefined");
+            }
+        }
+        
+        // Summary of results
+        std::print("\n{:=<48}\n", "");
+        if (std::isfinite(left_limit_) && std::isfinite(right_limit_)) {
+            std::print("Left-hand limit  (lim x→{}⁻ f(x)) : {:.12f}\n", point_, left_limit_);
+            std::print("Right-hand limit (lim x→{}⁺ f(x)) : {:.12f}\n", point_, right_limit_);
+            std::print("Absolute difference               : {:.2e}\n", difference_);
+        }
+        
+        if (exists_) {
+            std::print("\nLIMIT EXISTS\n");
+            std::print("lim(x → {}) f(x) = {:.5f}\n", point_, value_);
+        } else {
+            std::print("\nLIMIT DOES NOT EXIST\n");
+            if (!std::isfinite(left_limit_) || !std::isfinite(right_limit_)) {
+                std::print("Reason: function is undefined in the neighborhood of a\n");
+            } else {
+                std::print("Reason: one-sided limits are not equal\n");
+            }
+        }
     }
+    
+    // Getter methods
+    double value() const { return value_; }
+    bool exists() const { return exists_; }
+    double left_limit() const { return left_limit_; }
+    double right_limit() const { return right_limit_; }
+    double difference() const { return difference_; }
+    
+    // Conversion operator for direct numerical access
+    operator double() const { return value_; }
+};
 
-    // Output Pendekatan dari Kiri
-    fmt::print("PENDEKATAN DARI KIRI (x < {})\n", a);
-    fmt::print("{:<5} | {:<18} | {:<18}\n", "Step", "x", "f(x)");
-    fmt::print("{:-<48}\n", "");
-
-    for (size_t i = 0; i < x_kiri.size(); ++i)
-    {
-        double x = x_kiri[i];
-        double fx = f(x);
-        fmt::print("{:<5} | {:>16.12f} | {:>16.12f}\n", i + 1, x, fx);
-        limit_kiri = fx;
-    }
-
-    // Output Pendekatan dari Kanan
-    fmt::print("\nPENDEKATAN DARI KANAN (x > {})\n", a);
-    fmt::print("{:<5} | {:<18} | {:<18}\n", "Step", "x", "f(x)");
-    fmt::print("{:-<48}\n", "");
-
-    for (size_t i = 0; i < x_kanan.size(); ++i)
-    {
-        double x = x_kanan[i];
-        double fx = f(x);
-        fmt::print("{:<5} | {:>16.12f} | {:>16.12f}\n", i + 1, x, fx);
-        limit_kanan = fx;
-    }
-
-    // Verifikasi Limit
-    fmt::print("\n{:=<48}\n", "");
-
-    double diff = std::abs(limit_kiri - limit_kanan);
-    fmt::print("Limit dari kiri  : {:.12f}\n", limit_kiri);
-    fmt::print("Limit dari kanan : {:.12f}\n", limit_kanan);
-    fmt::print("Selisih          : {:.2e}\n", diff);
-
-    if (diff < 1e-3)
-    {
-        double avg_limit = (limit_kiri + limit_kanan) / 2.0;
-        fmt::print("\nLIMIT DITEMUKAN!\n");
-        fmt::print("lim(x→{}) f(x) = {:.12f}\n", a, avg_limit);
-        return avg_limit;
-    }
-    else
-    {
-        fmt::print("\nLIMIT TIDAK ADA\n");
-        fmt::print("  (Divergen atau Jump Discontinuity)\n");
-        return NAN;
-    }
+LimitResult limit(double(*f)(double), double a, double e = EPSILON) {
+  return LimitResult(f, a, e);
 }
 
-double f(double x)
-{
-    return (std::pow(x, 2) - 4) / (x - 2);
+// Test functions
+double f(double x) {
+  return (8 - (3 * x) + (12 * std::pow(x, 2)));
 }
 
-int main()
-{
-    limit(f, 2);
-    return 0;
+double f2(double t) {
+  return (6 + (4 * t)) / (std::pow(t, 2) + 1);
 }
 
+double f3(double x) {
+  return(std::pow(x, 2) - 25) / (std::pow(x, 2) + (2 * x) - 15);
+}
+
+int main() {
+  double x = -5;
+  double t = -3;
+  auto lim1 = limit(f3, x);
+  std::print("is the value exist? ");
+  if (lim1.exists()) {
+    std::print("Yeah, the limit is exist\n");
+    std::print("The limit when x -> {} f(x) = {:.5f}\n", x, lim1.value());
+    std::print("The value of the limit when approches form the left is: {}\n", lim1.left_limit());
+    std::print("The value of the limit when approches from the right is : {}\n", lim1.right_limit());
+    std::print("The difference between left and right limit is: {}\n", lim1.difference());
+
+    //this is when you want to see calculation/approaching process
+    lim1.display_calculation();
+  } else {
+    std::print("Nope\n");
+  }
+  return 0;
+}
